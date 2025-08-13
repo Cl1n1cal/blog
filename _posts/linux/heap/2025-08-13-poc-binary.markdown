@@ -18,6 +18,7 @@ Using the file command you should see the following output:
 ```
 file program
 ```
+
 ```
 program: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=5ebf57c66be7230d65662438a74d55d2d49494fb, for GNU/Linux 3.2.0, not stripped
 ```
