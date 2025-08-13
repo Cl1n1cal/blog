@@ -1,0 +1,8 @@
+---
+layout: post
+title:  "Linux Heap"
+date:   2025-08-13 06:50:19 +0200
+hidden: true
+---
+- [POC Binary](/2025/08/13/poc-binary.html)<br>
+- [Tcache Poisoning](/2025/08/13/tcache-poison.html)<br>
