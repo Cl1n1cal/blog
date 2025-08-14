@@ -26,9 +26,12 @@ baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://cl1nical.blog" # the base hostname & protocol for your site, e.g. http://example.com
 github_username:  Cl1n1cal
 
+avatar: /assets/images/avatar/profile.png
+
 # Build settings
-theme: minima
-plugins:
+theme: jekyll-theme-chirpy
+plugin:
+    - jekyll-remote-theme
     - jekyll-feed
 
 # Exclude from processing.
@@ -50,3 +53,4 @@ plugins:
 #   - vendor/cache/
 #   - vendor/gems/
 #   - vendor/ruby/
+

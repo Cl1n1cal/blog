@@ -2,6 +2,7 @@
 layout: post
 title:  "Tcache-Poison"
 date:   2025-08-13 06:50:19 +0200
+author: cl1nical
 hidden: true
 ---
 ### Description
@@ -64,8 +65,8 @@ Allocation, freeing and overwriting:<br>
 Allocating again:<br>
 <img src="/assets/images/tcache-poisoning/tcache4.png" style="width:100%; height:100%;" />
 
-Full exploit POC with comments:
-```
+Full exploit POC with comments:<br>
+```python
 #!/usr/bin/python3
 from pwn import *
 elf = context.binary = ELF("program")
@@ -161,5 +162,4 @@ malloc(3, 0x40, b"B")
 malloc(4, 0x40, b"XXXX")
 
 io.interactive()
-
 ```

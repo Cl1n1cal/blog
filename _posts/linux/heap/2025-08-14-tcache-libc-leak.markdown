@@ -2,6 +2,7 @@
 layout: post
 title:  "Libc leak with tcache enabled"
 date:   2025-08-14 06:50:19 +0200
+author: cl1nical
 hidden: true
 ---
 ### Description
