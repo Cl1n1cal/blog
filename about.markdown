@@ -13,10 +13,12 @@ Besides my studies I like to play CTF with 0-Day Aarhus and Kalmarunionen.<br>
 - Yellow
 - Green
 - Blue
+
 <br>
+
 This can be verified on the picture below or by visiting their website [pwn.college/belts](https://pwn.college/belts): <img src="/assets/images/blue_belt1.png" style="width:50%; height:50%;" />  
 
 ### Github repositories:
 - [PwnShop](https://github.com/Cl1n1cal/PwnShop)
-- [Kernel-Moduel-Archives](https://github.com/Cl1n1cal/Kernel-Module-Archives)
+- [Kernel-Module-Archives](https://github.com/Cl1n1cal/Kernel-Module-Archives)
 
