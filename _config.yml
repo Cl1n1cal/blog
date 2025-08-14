@@ -29,9 +29,8 @@ github_username:  Cl1n1cal
 avatar: /assets/images/avatar/profile.png
 
 # Build settings
-theme: jekyll-theme-chirpy
+theme: minima
 plugin:
-    - jekyll-remote-theme
     - jekyll-feed
 
 # Exclude from processing.
