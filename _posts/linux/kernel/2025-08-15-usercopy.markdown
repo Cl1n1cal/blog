@@ -1,0 +1,37 @@
+---
+layout: post
+title:  "Linux Kernel Usercopy"
+date:   2025-08-15 06:50:19 +0200
+author: cl1nical
+hidden: true
+---
+### Description
+I was playing around with a kernel module that I built to practice buffer overflows on. I used regular usercopy to move data between user land and kernel land when I realized that normal usercopy employs a size check on the kernel buffer and the size provided, preventing out of bounds read or write. <br>
+You can read a little more about it here at [Red Hat Documentation]("https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/7.6_release_notes/chap-red_hat_enterprise_linux-7.6_release_notes-kernel_parameters_changes"). Although I am using regular Ubuntu, it seems that this hardened usercopy is also default on this system. Even though hardened usercopy is nothing new, I wanted to write this blog post to show you the assembly concerning the bounds check.
+
+### Kernel Module
+This is the read function in a kernel module that has no apparent bounds check on the buffer that is being read to the user. An attacker could provide an arbitrary value in the size field:<br>
+```c
+/**
+ * Called when a process reads from the device
+ */
+static ssize_t hackme_read(struct file *filp, char __user *buffer, size_t length, loff_t *offset)
+{
+    size_t bytes_read = 0;
+    char vuln_buf[100];
+
+    bytes_read = copy_to_user(buffer, vuln_buf, length);
+
+    return bytes_read;
+}
+```
+
+### Disassembly
+Taking a look inside the hackme_read function, there is a bounds check before copy_to_user is called.<br>
+The first picture shows the value of the rdx register: 0x78
+<img src="/assets/images/kernel/registers_edited.png" style="width:100%; height:100%;" />
+The following picture is inside of the hackme_read function, where there clearly is a compare that will jump past the call to copy_to_user(underlined with white):
+<img src="/assets/images/kernel/bounds_check_edited.png" style="width:100%; height:100%;" />
+
+### Conclusion
+If you want to experiment with kernel buffer overflows or make a CTF challenge for example, you could use the function raw_copy_to_user which will not check the size field by default.

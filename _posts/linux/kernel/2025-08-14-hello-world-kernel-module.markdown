@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Hello World Kernel Module"
-date:   2025-08-13 06:50:19 +0200
+date:   2025-08-14 06:50:19 +0200
 author: cl1nical
 hidden: true
 ---
