@@ -6,5 +6,5 @@ categories: jekyll update
 ---
 
 - [Exploit script template](/2025/08/13/exploit-script.html)<br>
-- [Heap](/2025/08/14/heap.html)<br>
+- [Heap](/2025/08/13/heap.html)<br>
 - [Kernel](/2025/08/14/kernel.html)<br>
