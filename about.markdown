@@ -16,7 +16,9 @@ Besides my studies I like to play CTF with 0-Day Aarhus and Kalmarunionen.<br>
 
 <br>
 
-This can be verified on the picture below or by visiting their website [pwn.college/belts](https://pwn.college/belts): <img src="/assets/images/blue_belt1.png" style="width:50%; height:50%;" />  
+This can be verified on the pictures below or by visiting their website [pwn.college/belts](https://pwn.college/belts): <img src="/assets/images/blue_belt1.png" style="width:50%; height:50%;" />  
+<br>
+<img src="/assets/images/belts.jpg" style="width:50%; height:50%;" />
 
 ### Github repositories:
 - [PwnShop](https://github.com/Cl1n1cal/PwnShop)

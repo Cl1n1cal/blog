@@ -7,4 +7,6 @@ hidden: true
 ---
 ### Description
 When attacking a binary with a libc version of 2.31 or above, the malloc and free hooks will not be available to gain RIP control. This forces the attacker to look in other places.<br>
-Fortunately for us, libc 2.39 contains at least 3 different places with stack addresses in the RW section of libc. This means, that if we can get libc, we can use that leak to gain a stack leak and then overwrite the return pointer of a function - result ig
+Fortunately for us, libc 2.39 contains at least 3 different places with stack addresses in the RW section of libc. This means, that if we can get libc, we can use that leak to gain a stack leak and then overwrite the return pointer of a function - result
+
+### [WIP] - Coming soon
