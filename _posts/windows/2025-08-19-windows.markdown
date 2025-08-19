@@ -1,0 +1,8 @@
+---
+layout: post
+title:  "Windows"
+date:   2025-08-19 06:50:19 +0200
+categories: jekyll update
+---
+
+- [Reversing](/2025/08/19/reversing-pixel.html)<br>
