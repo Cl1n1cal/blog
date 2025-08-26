@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "POC Binary"
+title:  "Linux Heap POC Binary"
 date:   2025-08-13 06:50:19 +0200
 author: cl1nical
 hidden: true
