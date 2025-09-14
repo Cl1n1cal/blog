@@ -65,7 +65,7 @@ Inside **detlete_recipe** we can see on line 12 that the index containing the al
 
 
 Since malloc is used, the memory is not nulled when allocating it, leaving the edit function vulnerable because it uses strlen (this can be exploited because writable char bytes are left on the heap) allowing the attacker to modify the size value of the next chunk. The actual layout of the heap with this will be displayed later: <br>
-<img src="/assets/images/linux/heap/writeups/recipe_storage/recipe_ida_2.png" style="width:100%; height:100%;" />
+<img src="/assets/images/linux/heap/writeups/recipe_storage/recipe_ida_3.png" style="width:100%; height:100%;" />
 <br>
 NOTE: All functions are compiled with canary, meaning that getting an allocation on **create_recipe's** return ptr is not possible because the ret addr is 8 byte aligned, tcache requires 16 byte alignment and this would lead to an accidental canary overwrite by the size field, triggering the canary. For this reason, the **exit** exploit was used instead<br>
 
