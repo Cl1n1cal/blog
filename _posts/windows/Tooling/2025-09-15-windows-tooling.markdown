@@ -12,7 +12,10 @@ I made some videos that will introduce you to a setup that you can use for your 
 [Click here](https://youtu.be/rn5ytn_TMdw)<br>
 
 **Using pwntools to interact with the target binary**<br>
-[Click here](https://youtu.be/rn5ytn_TMdw)<br>
+[Click here](https://youtu.be/U6S3g3-qGLE)<br>
 
 **Debugging your exploit scripts**<br>
-[Click here](https://youtu.be/rn5ytn_TMdw)
+[Click here](https://youtu.be/O6KAdO7QdAI)<br>
+
+**Introduction to shellcoding - Windows**<br>
+[Click here](https://youtu.be/I-rLSLywANo)
