@@ -2,7 +2,7 @@
 layout: post
 title:  "Windows Tooling"
 date:   2025-09-15 06:50:19 +0200
-categories: jekyll update
+author: Cl1nical
 hidden: true
 ---
 ### Description
