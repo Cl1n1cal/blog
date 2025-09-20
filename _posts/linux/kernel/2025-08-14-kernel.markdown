@@ -7,4 +7,5 @@ hidden: true
 ---
 - [Hello World Kernel Module](/2025/08/14/hello-world-kernel-module.html)<br>
 - [Buffer Overflow Kernel Module](/2025/09/18/bof-kernel-module.html)<br>
+- [Exploiting the BOF kernel module](/2025/09/18/ropping-the-bof-module.html)<br>
 - [Usercopy](/2025/08/15/usercopy.html)<br>
