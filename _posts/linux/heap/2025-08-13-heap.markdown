@@ -10,6 +10,7 @@ hidden: true
 - [Tcache into libc leak](/2025/08/14/tcache-libc-leak.html)<br>
 - [Safe Linking](/2025/08/13/safe-linking.html)<br>
 - [Tcache Poisoning](/2025/08/13/tcache-poison.html)<br>
+- [Exit handlers exploitation](/2025/09/22/exit-handlers.html)<br>
 
 ### Writeups
 - [BrunnerCTF 2025: pwn_recipe-storage](/2025/08/25/pwn_recipe-storage.html)<br>
